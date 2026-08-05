@@ -25,6 +25,7 @@ import com.notiks.app.data.Hoja
 import com.notiks.app.ui.NotiksViewModel
 import com.notiks.app.ui.theme.NotiksTheme
 import com.notiks.app.util.OrigenDetector
+import com.notiks.app.util.ResumenFetcher
 
 /**
  * Esta Activity es la que Android muestra dentro del menú "Compartir" del
@@ -76,11 +77,28 @@ private fun ShareSheet(
     val hojasRecientes by viewModel.hojasRecientes.collectAsState(initial = emptyList())
     val cuadernos by viewModel.cuadernos.collectAsState(initial = emptyList())
 
-    var resumen by remember {
-        mutableStateOf(textoOriginal.replace(url ?: "", "").trim().take(160))
+    val textoSinUrl = remember(textoOriginal, url) {
+        textoOriginal.replace(url ?: "", "").trim()
     }
+    var resumen by remember { mutableStateOf(ResumenFetcher.limitarPalabras(textoSinUrl, 20)) }
+    var editadoPorUsuario by remember { mutableStateOf(false) }
+    var cargandoResumen by remember { mutableStateOf(false) }
     var mostrarNuevaHoja by remember { mutableStateOf(false) }
     var cuadernoSeleccionado by remember { mutableStateOf<Long?>(null) }
+
+    // La app de origen a veces solo comparte el link, sin título ni texto.
+    // En ese caso, entramos a la página y traemos el título/descripción real
+    // del contenido para no dejar guardado solo la URL.
+    LaunchedEffect(url) {
+        if (url != null && textoSinUrl.length < 15) {
+            cargandoResumen = true
+            val automatico = ResumenFetcher.obtenerResumenDesdeUrl(url)
+            if (!automatico.isNullOrBlank() && !editadoPorUsuario) {
+                resumen = ResumenFetcher.limitarPalabras(automatico, 20)
+            }
+            cargandoResumen = false
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -99,12 +117,27 @@ private fun ShareSheet(
 
             OutlinedTextField(
                 value = resumen,
-                onValueChange = { if (it.split(" ").size <= 30) resumen = it },
-                label = { Text("Resumen (máx. 30 palabras)") },
+                onValueChange = {
+                    editadoPorUsuario = true
+                    if (it.split(Regex("\\s+")).size <= 20) resumen = it
+                },
+                label = { Text("Resumen (máx. 20 palabras)") },
                 minLines = 2,
                 maxLines = 4,
                 modifier = Modifier.fillMaxWidth()
             )
+            if (cargandoResumen) {
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(12.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "Buscando de qué trata el contenido…",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
             Text("Elige una hoja", style = MaterialTheme.typography.titleMedium)
