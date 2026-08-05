@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.*
@@ -29,6 +30,7 @@ fun CuadernosScreen(
 ) {
     val cuadernos by viewModel.cuadernos.collectAsState(initial = emptyList())
     var mostrarDialogo by remember { mutableStateOf(false) }
+    var cuadernoAEliminar by remember { mutableStateOf<Cuaderno?>(null) }
 
     Scaffold(
         topBar = {
@@ -58,7 +60,11 @@ fun CuadernosScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(cuadernos) { cuaderno ->
-                    CuadernoCard(cuaderno = cuaderno, onClick = { onAbrirCuaderno(cuaderno.id, cuaderno.nombre) })
+                    CuadernoCard(
+                        cuaderno = cuaderno,
+                        onClick = { onAbrirCuaderno(cuaderno.id, cuaderno.nombre) },
+                        onEliminarClick = { cuadernoAEliminar = cuaderno }
+                    )
                 }
             }
         }
@@ -73,10 +79,21 @@ fun CuadernosScreen(
             }
         )
     }
+
+    cuadernoAEliminar?.let { cuaderno ->
+        EliminarCuadernoDialog(
+            nombreCuaderno = cuaderno.nombre,
+            onDismiss = { cuadernoAEliminar = null },
+            onConfirmar = {
+                viewModel.eliminarCuaderno(cuaderno)
+                cuadernoAEliminar = null
+            }
+        )
+    }
 }
 
 @Composable
-private fun CuadernoCard(cuaderno: Cuaderno, onClick: () -> Unit) {
+private fun CuadernoCard(cuaderno: Cuaderno, onClick: () -> Unit, onEliminarClick: () -> Unit) {
     val color = try { Color(android.graphics.Color.parseColor(cuaderno.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
     Row(
         modifier = Modifier
@@ -84,7 +101,7 @@ private fun CuadernoCard(cuaderno: Cuaderno, onClick: () -> Unit) {
             .clip(RoundedCornerShape(16.dp))
             .background(color.copy(alpha = 0.12f))
             .clickable(onClick = onClick)
-            .padding(16.dp),
+            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -97,8 +114,39 @@ private fun CuadernoCard(cuaderno: Cuaderno, onClick: () -> Unit) {
             Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color.White)
         }
         Spacer(Modifier.width(14.dp))
-        Text(cuaderno.nombre, style = MaterialTheme.typography.titleMedium)
+        Text(cuaderno.nombre, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        IconButton(onClick = onEliminarClick) {
+            Icon(
+                Icons.Default.DeleteOutline,
+                contentDescription = "Eliminar cuaderno",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
+}
+
+@Composable
+private fun EliminarCuadernoDialog(
+    nombreCuaderno: String,
+    onDismiss: () -> Unit,
+    onConfirmar: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.DeleteOutline, contentDescription = null) },
+        title = { Text("¿Eliminar \"$nombreCuaderno\"?") },
+        text = {
+            Text("Se eliminarán también todas sus hojas y los enlaces guardados dentro de ellas. Esta acción no se puede deshacer.")
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirmar) {
+                Text("Eliminar", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
 }
 
 @Composable
