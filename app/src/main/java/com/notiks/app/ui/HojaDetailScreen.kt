@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -67,11 +68,15 @@ fun HojaDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(items) { item ->
-                    ItemBubble(item = item) {
-                        item.url?.let { url ->
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                        }
-                    }
+                    ItemBubble(
+                        item = item,
+                        onClick = {
+                            item.url?.let { url ->
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                            }
+                        },
+                        onCompartir = { compartirItem(context, item) }
+                    )
                 }
             }
         }
@@ -87,8 +92,24 @@ private fun iconoDe(origen: Origen): ImageVector = when (origen) {
     Origen.TEXTO -> Icons.Default.Notes
 }
 
+/** Abre el selector nativo de Android para reenviar un ítem guardado a cualquier app. */
+private fun compartirItem(context: android.content.Context, item: Item) {
+    val texto = buildString {
+        append(item.resumen)
+        if (item.url != null) {
+            append("\n\n")
+            append(item.url)
+        }
+    }
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, texto)
+    }
+    context.startActivity(Intent.createChooser(intent, "Compartir con"))
+}
+
 @Composable
-private fun ItemBubble(item: Item, onClick: () -> Unit) {
+private fun ItemBubble(item: Item, onClick: () -> Unit, onCompartir: () -> Unit) {
     val formato = remember { SimpleDateFormat("d MMM, HH:mm", Locale("es")) }
     Column(
         modifier = Modifier
@@ -96,7 +117,7 @@ private fun ItemBubble(item: Item, onClick: () -> Unit) {
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
             .clickable(enabled = item.url != null, onClick = onClick)
-            .padding(14.dp)
+            .padding(start = 14.dp, top = 6.dp, bottom = 14.dp, end = 6.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(iconoDe(item.origen), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
@@ -104,10 +125,19 @@ private fun ItemBubble(item: Item, onClick: () -> Unit) {
             Text(
                 OrigenDetector.nombreLegible(item.origen),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f)
             )
+            IconButton(onClick = onCompartir, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Default.Share,
+                    contentDescription = "Compartir este artículo",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(2.dp))
         Text(item.resumen, style = MaterialTheme.typography.bodyLarge)
         if (item.url != null) {
             Spacer(Modifier.height(4.dp))
