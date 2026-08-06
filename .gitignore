@@ -1,0 +1,17 @@
+# Android Studio / Gradle
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+app/build/
+app/release/
+
+# Firmas locales (nunca subir el keystore ni sus contraseñas)
+*.jks
+*.keystore
+key.properties

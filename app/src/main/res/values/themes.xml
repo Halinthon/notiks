@@ -1,0 +1,22 @@
+<resources>
+
+    <style name="Theme.Notiks" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#6C4DF6</item>
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+
+    <!--
+        Tema flotante para ShareReceiverActivity: la ventana no ocupa toda
+        la pantalla, se ve como un bottom sheet sobre la app de origen.
+    -->
+    <style name="Theme.Notiks.Dialog" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
+        <item name="android:gravity">bottom</item>
+    </style>
+
+</resources>
