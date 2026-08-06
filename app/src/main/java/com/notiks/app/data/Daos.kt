@@ -23,7 +23,7 @@ interface HojaDao {
     @Query("SELECT * FROM hojas WHERE cuadernoId = :cuadernoId ORDER BY fechaUltimaActividad DESC")
     fun observarPorCuaderno(cuadernoId: Long): Flow<List<Hoja>>
 
-    @Query("SELECT * FROM hojas ORDER BY fechaUltimaActividad DESC LIMIT 5")
+    @Query("SELECT * FROM hojas ORDER BY fechaUltimaActividad DESC")
     fun observarRecientes(): Flow<List<Hoja>>
 
     @Insert

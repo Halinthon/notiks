@@ -33,6 +33,11 @@ class NotiksViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { onCreada(repo.crearHoja(cuadernoId, titulo)) }
     }
 
+    /** Elimina la hoja y, en cascada, todos sus artículos guardados. */
+    fun eliminarHoja(hoja: com.notiks.app.data.Hoja) {
+        viewModelScope.launch { repo.eliminarHoja(hoja) }
+    }
+
     fun guardarItem(hojaId: Long, url: String?, resumen: String, origen: Origen) {
         viewModelScope.launch { repo.guardarItem(hojaId, url, resumen, origen) }
     }

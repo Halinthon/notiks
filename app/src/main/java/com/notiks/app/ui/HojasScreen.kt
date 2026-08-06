@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +32,7 @@ fun HojasScreen(
 ) {
     val hojas by viewModel.hojasDe(cuadernoId).collectAsState(initial = emptyList())
     var mostrarDialogo by remember { mutableStateOf(false) }
+    var hojaAEliminar by remember { mutableStateOf<Hoja?>(null) }
 
     Scaffold(
         topBar = {
@@ -59,8 +61,12 @@ fun HojasScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(hojas) { hoja ->
-                    HojaRow(hoja = hoja, onClick = { onAbrirHoja(hoja.id, hoja.titulo) })
+                items(hojas, key = { it.id }) { hoja ->
+                    HojaRow(
+                        hoja = hoja,
+                        onClick = { onAbrirHoja(hoja.id, hoja.titulo) },
+                        onEliminarClick = { hojaAEliminar = hoja }
+                    )
                 }
             }
         }
@@ -75,10 +81,28 @@ fun HojasScreen(
             }
         )
     }
+
+    hojaAEliminar?.let { hoja ->
+        AlertDialog(
+            onDismissRequest = { hojaAEliminar = null },
+            icon = { Icon(Icons.Default.DeleteOutline, contentDescription = null) },
+            title = { Text("¿Eliminar \"${hoja.titulo}\"?") },
+            text = { Text("Se eliminarán también todos los artículos guardados dentro de esta hoja. Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.eliminarHoja(hoja)
+                    hojaAEliminar = null
+                }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { hojaAEliminar = null }) { Text("Cancelar") }
+            }
+        )
+    }
 }
 
 @Composable
-private fun HojaRow(hoja: Hoja, onClick: () -> Unit) {
+private fun HojaRow(hoja: Hoja, onClick: () -> Unit, onEliminarClick: () -> Unit) {
     val formato = remember { SimpleDateFormat("d MMM, HH:mm", Locale("es")) }
     Row(
         modifier = Modifier
@@ -86,17 +110,24 @@ private fun HojaRow(hoja: Hoja, onClick: () -> Unit) {
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             .clickable(onClick = onClick)
-            .padding(14.dp),
+            .padding(start = 14.dp, top = 6.dp, bottom = 6.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.width(12.dp))
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(hoja.titulo, style = MaterialTheme.typography.titleMedium)
             Text(
                 "Última actividad: ${formato.format(Date(hoja.fechaUltimaActividad))}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(onClick = onEliminarClick) {
+            Icon(
+                Icons.Default.DeleteOutline,
+                contentDescription = "Eliminar hoja",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

@@ -144,10 +144,10 @@ private fun ShareSheet(
             Spacer(Modifier.height(8.dp))
 
             LazyColumn(
-                modifier = Modifier.heightIn(max = 220.dp),
+                modifier = Modifier.heightIn(max = 320.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(hojasRecientes) { hoja ->
+                items(hojasRecientes, key = { it.id }) { hoja ->
                     HojaOpcion(hoja = hoja) {
                         viewModel.guardarItem(hoja.id, url, resumen, origen)
                         onGuardado()
