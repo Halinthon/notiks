@@ -1,0 +1,34 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Hoja de bloc con esquina doblada -->
+    <path
+        android:pathData="M32,22 H68 L80,34 V86 C80,89.31 77.31,92 74,92 H32 C28.69,92 26,89.31 26,86 V28 C26,24.69 28.69,22 32,22 Z"
+        android:fillColor="#FFFFFF"/>
+    <!-- Esquina doblada -->
+    <path
+        android:pathData="M68,22 L80,34 H72 C69.79,34 68,32.21 68,30 Z"
+        android:fillColor="#E9E4FF"/>
+
+    <!-- Líneas de texto simulando notas -->
+    <path
+        android:pathData="M34,46 H62 V50 H34 Z"
+        android:fillColor="#FF6B5B"/>
+    <path
+        android:pathData="M34,58 H72 V50.5 H34 Z"
+        android:fillColor="#D9D2FF"/>
+    <path
+        android:pathData="M34,58 H72 V62 H34 Z"
+        android:fillColor="#D9D2FF"/>
+    <path
+        android:pathData="M34,68 H58 V72 H34 Z"
+        android:fillColor="#D9D2FF"/>
+
+    <!-- Marcador / link doblado, símbolo de "guardado" -->
+    <path
+        android:pathData="M58,74 L66,74 L66,90 L62,87 L58,90 Z"
+        android:fillColor="#FFC857"/>
+</vector>
