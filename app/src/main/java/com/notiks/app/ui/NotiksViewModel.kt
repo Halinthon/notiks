@@ -41,6 +41,11 @@ class NotiksViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { repo.eliminarItem(item) }
     }
 
+    /** calificacion va de 1 a 5 estrellas; usa 0 para quitar la calificación. */
+    fun calificarItem(item: Item, calificacion: Int) {
+        viewModelScope.launch { repo.calificarItem(item.id, calificacion) }
+    }
+
     suspend fun exportarJson(): String {
         val listaC = repo.obtenerCuadernosLista().first()
         val hojas = mutableListOf<com.notiks.app.data.Hoja>()
@@ -64,7 +69,7 @@ class NotiksViewModel(app: Application) : AndroidViewModel(app) {
                     val ultimaActividad = h.items.maxOfOrNull { it.timestamp } ?: h.fechaCreacion
                     val hojaId = repo.importarHoja(cuadernoId, h.titulo, h.fechaCreacion, ultimaActividad)
                     h.items.forEach { i ->
-                        repo.importarItem(hojaId, i.url, i.resumen, i.origen, i.timestamp)
+                        repo.importarItem(hojaId, i.url, i.resumen, i.origen, i.timestamp, i.calificacion)
                     }
                 }
             }

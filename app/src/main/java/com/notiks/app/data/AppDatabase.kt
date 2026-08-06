@@ -6,6 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 class Converters {
     @TypeConverter
@@ -15,9 +17,16 @@ class Converters {
     fun aOrigen(s: String): Origen = Origen.valueOf(s)
 }
 
+/** Agrega la columna de calificación (0 a 5 estrellas) sin borrar los enlaces ya guardados. */
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE items ADD COLUMN calificacion INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 @Database(
     entities = [Cuaderno::class, Hoja::class, Item::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -35,7 +44,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "notiks.db"
-                ).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_1_2).build().also { INSTANCE = it }
             }
     }
 }

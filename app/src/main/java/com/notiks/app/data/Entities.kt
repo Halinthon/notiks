@@ -50,5 +50,7 @@ data class Item(
     /** Resumen escrito por el usuario, máximo ~30 palabras. */
     val resumen: String,
     val origen: Origen,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    /** Calificación de 0 (sin calificar) a 5 estrellas, según qué tanto le interesó al usuario. */
+    val calificacion: Int = 0
 )

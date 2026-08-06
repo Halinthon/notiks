@@ -52,4 +52,7 @@ interface ItemDao {
 
     @Query("SELECT * FROM items ORDER BY timestamp ASC")
     suspend fun obtenerTodosParaExportar(): List<Item>
+
+    @Query("UPDATE items SET calificacion = :calificacion WHERE id = :itemId")
+    suspend fun actualizarCalificacion(itemId: Long, calificacion: Int)
 }

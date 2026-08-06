@@ -45,6 +45,7 @@ object ExportUtil {
                     ji.put("resumen", i.resumen)
                     ji.put("origen", i.origen.name)
                     ji.put("timestamp", i.timestamp)
+                    ji.put("calificacion", i.calificacion)
                     arrItems.put(ji)
                 }
                 jh.put("items", arrItems)

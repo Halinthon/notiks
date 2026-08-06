@@ -8,7 +8,8 @@ data class ItemImportado(
     val url: String?,
     val resumen: String,
     val origen: Origen,
-    val timestamp: Long
+    val timestamp: Long,
+    val calificacion: Int = 0
 )
 
 data class HojaImportada(
@@ -64,7 +65,8 @@ object ImportUtil {
                         Origen.TEXTO
                     }
                     val timestamp = ji.optLong("timestamp", System.currentTimeMillis())
-                    items += ItemImportado(url, resumen, origen, timestamp)
+                    val calificacion = ji.optInt("calificacion", 0).coerceIn(0, 5)
+                    items += ItemImportado(url, resumen, origen, timestamp, calificacion)
                 }
                 hojas += HojaImportada(titulo, fechaCreacionHoja, items)
             }

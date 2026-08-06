@@ -28,6 +28,8 @@ class Repository(context: Context) {
         obtenerHoja(hojaId)?.let { tocarHoja(it) }
     }
     suspend fun eliminarItem(i: Item) = itemDao.eliminar(i)
+    suspend fun calificarItem(itemId: Long, calificacion: Int) =
+        itemDao.actualizarCalificacion(itemId, calificacion.coerceIn(0, 5))
 
     suspend fun obtenerTodoParaExportar(): List<Item> = itemDao.obtenerTodosParaExportar()
     suspend fun obtenerCuadernosLista() = cuadernoDao.observarTodos()
@@ -48,6 +50,6 @@ class Repository(context: Context) {
             )
         )
 
-    suspend fun importarItem(hojaId: Long, url: String?, resumen: String, origen: Origen, timestamp: Long) =
-        itemDao.insertar(Item(hojaId = hojaId, url = url, resumen = resumen, origen = origen, timestamp = timestamp))
+    suspend fun importarItem(hojaId: Long, url: String?, resumen: String, origen: Origen, timestamp: Long, calificacion: Int = 0) =
+        itemDao.insertar(Item(hojaId = hojaId, url = url, resumen = resumen, origen = origen, timestamp = timestamp, calificacion = calificacion))
 }
