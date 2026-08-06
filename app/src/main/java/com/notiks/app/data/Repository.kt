@@ -31,4 +31,23 @@ class Repository(context: Context) {
 
     suspend fun obtenerTodoParaExportar(): List<Item> = itemDao.obtenerTodosParaExportar()
     suspend fun obtenerCuadernosLista() = cuadernoDao.observarTodos()
+
+    // ── Importación de un respaldo (mismo dispositivo o uno nuevo) ──
+    // Se preservan nombre, color y fechas originales para que el historial
+    // se vea igual que en el dispositivo del que salió el respaldo.
+    suspend fun importarCuaderno(nombre: String, colorHex: String, fechaCreacion: Long): Long =
+        cuadernoDao.insertar(Cuaderno(nombre = nombre, colorHex = colorHex, fechaCreacion = fechaCreacion))
+
+    suspend fun importarHoja(cuadernoId: Long, titulo: String, fechaCreacion: Long, fechaUltimaActividad: Long): Long =
+        hojaDao.insertar(
+            Hoja(
+                cuadernoId = cuadernoId,
+                titulo = titulo,
+                fechaCreacion = fechaCreacion,
+                fechaUltimaActividad = fechaUltimaActividad
+            )
+        )
+
+    suspend fun importarItem(hojaId: Long, url: String?, resumen: String, origen: Origen, timestamp: Long) =
+        itemDao.insertar(Item(hojaId = hojaId, url = url, resumen = resumen, origen = origen, timestamp = timestamp))
 }

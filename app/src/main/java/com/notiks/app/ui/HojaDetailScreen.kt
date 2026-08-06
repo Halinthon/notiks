@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Notes
@@ -41,6 +42,7 @@ fun HojaDetailScreen(
 ) {
     val items by viewModel.itemsDe(hojaId).collectAsState(initial = emptyList())
     val context = LocalContext.current
+    var itemAEliminar by remember { mutableStateOf<Item?>(null) }
 
     Scaffold(
         topBar = {
@@ -75,11 +77,30 @@ fun HojaDetailScreen(
                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                             }
                         },
-                        onCompartir = { compartirItem(context, item) }
+                        onCompartir = { compartirItem(context, item) },
+                        onEliminar = { itemAEliminar = item }
                     )
                 }
             }
         }
+    }
+
+    itemAEliminar?.let { item ->
+        AlertDialog(
+            onDismissRequest = { itemAEliminar = null },
+            icon = { Icon(Icons.Default.DeleteOutline, contentDescription = null) },
+            title = { Text("¿Eliminar este artículo?") },
+            text = { Text("Se quitará de esta hoja. Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.eliminarItem(item)
+                    itemAEliminar = null
+                }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { itemAEliminar = null }) { Text("Cancelar") }
+            }
+        )
     }
 }
 
@@ -109,7 +130,7 @@ private fun compartirItem(context: android.content.Context, item: Item) {
 }
 
 @Composable
-private fun ItemBubble(item: Item, onClick: () -> Unit, onCompartir: () -> Unit) {
+private fun ItemBubble(item: Item, onClick: () -> Unit, onCompartir: () -> Unit, onEliminar: () -> Unit) {
     val formato = remember { SimpleDateFormat("d MMM, HH:mm", Locale("es")) }
     Column(
         modifier = Modifier
@@ -132,6 +153,14 @@ private fun ItemBubble(item: Item, onClick: () -> Unit, onCompartir: () -> Unit)
                 Icon(
                     Icons.Default.Share,
                     contentDescription = "Compartir este artículo",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            IconButton(onClick = onEliminar, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Default.DeleteOutline,
+                    contentDescription = "Eliminar este artículo",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
