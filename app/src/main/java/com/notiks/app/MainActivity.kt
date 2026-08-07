@@ -43,8 +43,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             var colorFondoHex by remember { mutableStateOf(PreferenciasTema.obtenerColorGuardado(this)) }
+            val esOscuro = remember(colorFondoHex) { PreferenciasTema.esColorOscuro(colorFondoHex) }
 
-            NotiksTheme(colorFondo = androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(colorFondoHex))) {
+            NotiksTheme(
+                colorFondo = androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(colorFondoHex)),
+                esOscuro = esOscuro
+            ) {
                 val navController = rememberNavController()
                 NavHost(navController = navController, startDestination = "cuadernos") {
                     composable("cuadernos") {

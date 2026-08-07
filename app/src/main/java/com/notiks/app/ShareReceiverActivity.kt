@@ -52,7 +52,11 @@ class ShareReceiverActivity : ComponentActivity() {
 
         setContent {
             val colorFondoHex = remember { PreferenciasTema.obtenerColorGuardado(this) }
-            NotiksTheme(colorFondo = androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(colorFondoHex))) {
+            val esOscuro = remember { PreferenciasTema.esColorOscuro(colorFondoHex) }
+            NotiksTheme(
+                colorFondo = androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(colorFondoHex)),
+                esOscuro = esOscuro
+            ) {
                 ShareSheet(
                     viewModel = viewModel,
                     textoOriginal = textoCompartido,

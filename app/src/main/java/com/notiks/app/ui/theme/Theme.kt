@@ -27,12 +27,13 @@ private val DarkColors = darkColorScheme(
 )
 
 @Composable
-fun NotiksTheme(colorFondo: Color? = null, content: @Composable () -> Unit) {
-    // Si el usuario eligió un color de fondo, se respeta siempre (con la
-    // paleta clara, que tiene texto oscuro legible sobre tonos pastel),
-    // sin importar si el sistema está en modo oscuro o claro. Solo se usa
-    // el tema oscuro automático cuando no hay una elección explícita.
+fun NotiksTheme(colorFondo: Color? = null, esOscuro: Boolean = false, content: @Composable () -> Unit) {
+    // Si el usuario eligió un color de fondo, se respeta siempre, usando la
+    // paleta clara (texto oscuro) o la oscura (texto claro) según el color
+    // elegido sea claro u oscuro — sin importar el modo del sistema.
+    // Solo se usa el tema oscuro automático cuando no hay elección explícita.
     val colors = when {
+        colorFondo != null && esOscuro -> DarkColors.copy(background = colorFondo, surface = colorFondo)
         colorFondo != null -> LightColors.copy(background = colorFondo)
         isSystemInDarkTheme() -> DarkColors
         else -> LightColors

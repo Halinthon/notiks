@@ -7,7 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -276,34 +278,37 @@ private fun SelectorColorFondoDialog(
     onDismiss: () -> Unit,
     onSeleccionar: (String) -> Unit
 ) {
+    val (opcionesClaras, opcionesOscuras) = PreferenciasTema.coloresDisponibles.partition { !it.esOscuro }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Palette, contentDescription = null) },
         title = { Text("Color de fondo") },
         text = {
-            Column {
-                PreferenciasTema.coloresDisponibles.forEach { (nombre, hex) ->
-                    val seleccionado = hex.equals(colorActual, ignoreCase = true)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { onSeleccionar(hex) }
-                            .padding(vertical = 10.dp, horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(android.graphics.Color.parseColor(hex)))
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Text(nombre, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                        if (seleccionado) {
-                            Text("✓", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
-                        }
-                    }
+            Column(
+                Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    "Modo claro",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                opcionesClaras.forEach { opcion ->
+                    FilaColor(opcion = opcion, seleccionado = opcion.hex.equals(colorActual, true), onClick = { onSeleccionar(opcion.hex) })
+                }
+
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "Modo oscuro",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                opcionesOscuras.forEach { opcion ->
+                    FilaColor(opcion = opcion, seleccionado = opcion.hex.equals(colorActual, true), onClick = { onSeleccionar(opcion.hex) })
                 }
             }
         },
@@ -311,6 +316,30 @@ private fun SelectorColorFondoDialog(
             TextButton(onClick = onDismiss) { Text("Listo") }
         }
     )
+}
+
+@Composable
+private fun FilaColor(opcion: com.notiks.app.util.OpcionColorFondo, seleccionado: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(android.graphics.Color.parseColor(opcion.hex)))
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(opcion.nombre, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        if (seleccionado) {
+            Text("✓", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+        }
+    }
 }
 
 @Composable
