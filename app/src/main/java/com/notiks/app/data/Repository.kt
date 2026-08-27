@@ -21,6 +21,9 @@ class Repository(context: Context) {
     suspend fun obtenerHoja(id: Long) = hojaDao.obtenerPorId(id)
     suspend fun tocarHoja(hoja: Hoja) =
         hojaDao.actualizar(hoja.copy(fechaUltimaActividad = System.currentTimeMillis()))
+    suspend fun renombrarHoja(hojaId: Long, nuevoTitulo: String) =
+        hojaDao.actualizarTitulo(hojaId, nuevoTitulo)
+    fun observarHojasConCuaderno() = hojaDao.observarTodasConCuaderno()
 
     fun observarItems(hojaId: Long) = itemDao.observarPorHoja(hojaId)
     suspend fun guardarItem(hojaId: Long, url: String?, resumen: String, origen: Origen) {
@@ -32,6 +35,10 @@ class Repository(context: Context) {
         itemDao.actualizarCalificacion(itemId, calificacion.coerceIn(0, 5))
     suspend fun editarResumen(itemId: Long, resumen: String) =
         itemDao.actualizarResumen(itemId, resumen)
+    suspend fun moverItem(itemId: Long, nuevaHojaId: Long) {
+        itemDao.moverAHoja(itemId, nuevaHojaId)
+        obtenerHoja(nuevaHojaId)?.let { tocarHoja(it) }
+    }
     fun observarConteoTotalItems() = itemDao.observarConteoTotal()
     fun observarConteoPorHoja() = itemDao.observarConteoPorHoja()
 

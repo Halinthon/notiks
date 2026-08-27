@@ -7,10 +7,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarViewMonth
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -32,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.notiks.app.data.HojaConCuaderno
 import com.notiks.app.data.Item
 import com.notiks.app.data.Origen
 import com.notiks.app.util.OrigenDetector
@@ -56,17 +61,71 @@ private fun ordenar(items: List<Item>, orden: OrdenItems): List<Item> = when (or
 private fun esOrdenPorFecha(orden: OrdenItems) =
     orden == OrdenItems.FECHA_ANTIGUA || orden == OrdenItems.FECHA_RECIENTE
 
+/** Granularidad con la que se agrupan los artículos cuando el orden es por fecha. */
+private enum class Granularidad(val etiqueta: String) {
+    DIA("Agrupar por día"),
+    SEMANA("Agrupar por semana"),
+    MES("Agrupar por mes")
+}
+
 private fun mismoDia(a: Calendar, b: Calendar) =
     a.get(Calendar.YEAR) == b.get(Calendar.YEAR) && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)
 
-private fun etiquetaFecha(timestamp: Long): String {
-    val dia = Calendar.getInstance().apply { timeInMillis = timestamp }
-    val hoy = Calendar.getInstance()
-    val ayer = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
-    return when {
-        mismoDia(dia, hoy) -> "Hoy"
-        mismoDia(dia, ayer) -> "Ayer"
-        else -> SimpleDateFormat("d 'de' MMMM, yyyy", Locale("es")).format(dia.time)
+private fun inicioDeSemana(cal: Calendar): Calendar {
+    val c = cal.clone() as Calendar
+    // Retrocede hasta el lunes de esa semana (independiente del idioma/región del dispositivo).
+    val diaSemana = c.get(Calendar.DAY_OF_WEEK) // domingo=1 ... sábado=7
+    val diasDesdeElLunes = (diaSemana - Calendar.MONDAY + 7) % 7
+    c.add(Calendar.DAY_OF_YEAR, -diasDesdeElLunes)
+    c.set(Calendar.HOUR_OF_DAY, 0); c.set(Calendar.MINUTE, 0); c.set(Calendar.SECOND, 0)
+    return c
+}
+
+private fun etiquetaSemana(timestamp: Long): String {
+    val lunes = inicioDeSemana(Calendar.getInstance().apply { timeInMillis = timestamp })
+    val domingo = (lunes.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 6) }
+    val lunesActual = inicioDeSemana(Calendar.getInstance())
+
+    if (lunes.get(Calendar.YEAR) == lunesActual.get(Calendar.YEAR) &&
+        lunes.get(Calendar.DAY_OF_YEAR) == lunesActual.get(Calendar.DAY_OF_YEAR)
+    ) {
+        return "Esta semana"
+    }
+    val semanaPasada = (lunesActual.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -7) }
+    if (lunes.get(Calendar.YEAR) == semanaPasada.get(Calendar.YEAR) &&
+        lunes.get(Calendar.DAY_OF_YEAR) == semanaPasada.get(Calendar.DAY_OF_YEAR)
+    ) {
+        return "Semana pasada"
+    }
+
+    val mismoMes = lunes.get(Calendar.MONTH) == domingo.get(Calendar.MONTH)
+    val formatoDia = SimpleDateFormat("d", Locale("es"))
+    val formatoDiaMes = SimpleDateFormat("d MMM", Locale("es"))
+    val rango = if (mismoMes) {
+        "${formatoDia.format(lunes.time)}–${formatoDiaMes.format(domingo.time)}"
+    } else {
+        "${formatoDiaMes.format(lunes.time)}–${formatoDiaMes.format(domingo.time)}"
+    }
+    return "Semana del $rango, ${domingo.get(Calendar.YEAR)}"
+}
+
+private fun etiquetaMes(timestamp: Long): String {
+    val texto = SimpleDateFormat("MMMM yyyy", Locale("es")).format(Date(timestamp))
+    return texto.replaceFirstChar { it.uppercase() }
+}
+
+private fun etiquetaFecha(timestamp: Long, granularidad: Granularidad): String = when (granularidad) {
+    Granularidad.SEMANA -> etiquetaSemana(timestamp)
+    Granularidad.MES -> etiquetaMes(timestamp)
+    Granularidad.DIA -> {
+        val dia = Calendar.getInstance().apply { timeInMillis = timestamp }
+        val hoy = Calendar.getInstance()
+        val ayer = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+        when {
+            mismoDia(dia, hoy) -> "Hoy"
+            mismoDia(dia, ayer) -> "Ayer"
+            else -> SimpleDateFormat("d 'de' MMMM, yyyy", Locale("es")).format(dia.time)
+        }
     }
 }
 
@@ -82,13 +141,13 @@ private fun etiquetaCalificacion(calificacion: Int): String = when (calificacion
 private data class GrupoItems(val etiqueta: String, val items: List<Item>)
 
 /**
- * Agrupa la lista ya ordenada por día (si el orden es por fecha) o por
- * cantidad de estrellas (si el orden es por calificación). Como la lista
- * ya viene ordenada, los ítems de un mismo grupo quedan contiguos.
+ * Agrupa la lista ya ordenada por día/semana/mes (si el orden es por fecha)
+ * o por cantidad de estrellas (si el orden es por calificación). Como la
+ * lista ya viene ordenada, los ítems de un mismo grupo quedan contiguos.
  */
-private fun agrupar(itemsOrdenados: List<Item>, orden: OrdenItems): List<GrupoItems> {
+private fun agrupar(itemsOrdenados: List<Item>, orden: OrdenItems, granularidad: Granularidad): List<GrupoItems> {
     val agrupado = if (esOrdenPorFecha(orden)) {
-        itemsOrdenados.groupBy { etiquetaFecha(it.timestamp) }
+        itemsOrdenados.groupBy { etiquetaFecha(it.timestamp, granularidad) }
     } else {
         itemsOrdenados.groupBy { etiquetaCalificacion(it.calificacion) }
     }
@@ -107,11 +166,15 @@ fun HojaDetailScreen(
     val context = LocalContext.current
     var itemAEliminar by remember { mutableStateOf<Item?>(null) }
     var itemAEditar by remember { mutableStateOf<Item?>(null) }
+    var itemAMover by remember { mutableStateOf<Item?>(null) }
     var orden by remember { mutableStateOf(OrdenItems.FECHA_ANTIGUA) }
+    var granularidad by remember { mutableStateOf(Granularidad.DIA) }
     var mostrarMenuOrden by remember { mutableStateOf(false) }
+    var mostrarMenuGranularidad by remember { mutableStateOf(false) }
     var gruposColapsados by remember { mutableStateOf(setOf<String>()) }
     val itemsOrdenados = remember(items, orden) { ordenar(items, orden) }
-    val grupos = remember(itemsOrdenados, orden) { agrupar(itemsOrdenados, orden) }
+    val grupos = remember(itemsOrdenados, orden, granularidad) { agrupar(itemsOrdenados, orden, granularidad) }
+    val hojasConCuaderno by viewModel.hojasConCuaderno.collectAsState(initial = emptyList())
 
     Scaffold(
         topBar = {
@@ -123,6 +186,33 @@ fun HojaDetailScreen(
                     }
                 },
                 actions = {
+                    if (esOrdenPorFecha(orden)) {
+                        Box {
+                            IconButton(onClick = { mostrarMenuGranularidad = true }) {
+                                Icon(Icons.Default.CalendarViewMonth, contentDescription = "Agrupar por")
+                            }
+                            DropdownMenu(
+                                expanded = mostrarMenuGranularidad,
+                                onDismissRequest = { mostrarMenuGranularidad = false }
+                            ) {
+                                Granularidad.entries.forEach { opcion ->
+                                    DropdownMenuItem(
+                                        text = { Text(opcion.etiqueta) },
+                                        leadingIcon = {
+                                            if (opcion == granularidad) {
+                                                Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            }
+                                        },
+                                        onClick = {
+                                            granularidad = opcion
+                                            gruposColapsados = emptySet()
+                                            mostrarMenuGranularidad = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                     Box {
                         IconButton(onClick = { mostrarMenuOrden = true }) {
                             Icon(Icons.Default.Sort, contentDescription = "Organizar por")
@@ -206,6 +296,7 @@ fun HojaDetailScreen(
                                 onCompartir = { compartirItem(context, item) },
                                 onEliminar = { itemAEliminar = item },
                                 onEditar = { itemAEditar = item },
+                                onMover = { itemAMover = item },
                                 onCalificar = { estrellas -> viewModel.calificarItem(item, estrellas) }
                             )
                         }
@@ -243,6 +334,63 @@ fun HojaDetailScreen(
             }
         )
     }
+
+    itemAMover?.let { item ->
+        MoverAHojaDialog(
+            hojaActualId = hojaId,
+            hojasConCuaderno = hojasConCuaderno,
+            onDismiss = { itemAMover = null },
+            onMover = { nuevaHojaId ->
+                viewModel.moverItem(item, nuevaHojaId)
+                itemAMover = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun MoverAHojaDialog(
+    hojaActualId: Long,
+    hojasConCuaderno: List<HojaConCuaderno>,
+    onDismiss: () -> Unit,
+    onMover: (Long) -> Unit
+) {
+    val opciones = hojasConCuaderno.filter { it.id != hojaActualId }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.DriveFileMove, contentDescription = null) },
+        title = { Text("Mover a otra hoja") },
+        text = {
+            if (opciones.isEmpty()) {
+                Text("No tienes otra hoja disponible. Crea una nueva hoja primero para poder mover este artículo.")
+            } else {
+                Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+                    opciones.forEach { hoja ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onMover(hoja.id) }
+                                .padding(vertical = 10.dp, horizontal = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(hoja.titulo, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    hoja.nombreCuaderno,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
 }
 
 @Composable
@@ -310,6 +458,7 @@ private fun ItemBubble(
     onCompartir: () -> Unit,
     onEliminar: () -> Unit,
     onEditar: () -> Unit,
+    onMover: () -> Unit,
     onCalificar: (Int) -> Unit
 ) {
     val formato = remember { SimpleDateFormat("d MMM, HH:mm", Locale("es")) }
@@ -334,6 +483,14 @@ private fun ItemBubble(
                 Icon(
                     Icons.Default.Edit,
                     contentDescription = "Editar resumen",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            IconButton(onClick = onMover, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Default.DriveFileMove,
+                    contentDescription = "Mover a otra hoja",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )

@@ -19,6 +19,7 @@ class NotiksViewModel(app: Application) : AndroidViewModel(app) {
     val hojasRecientes = repo.observarHojasRecientes()
     val totalFichasGuardadas = repo.observarConteoTotalItems()
     val conteoPorHoja = repo.observarConteoPorHoja()
+    val hojasConCuaderno = repo.observarHojasConCuaderno()
 
     fun hojasDe(cuadernoId: Long) = repo.observarHojas(cuadernoId)
     fun itemsDe(hojaId: Long) = repo.observarItems(hojaId)
@@ -40,6 +41,10 @@ class NotiksViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { repo.eliminarHoja(hoja) }
     }
 
+    fun renombrarHoja(hoja: com.notiks.app.data.Hoja, nuevoTitulo: String) {
+        viewModelScope.launch { repo.renombrarHoja(hoja.id, nuevoTitulo) }
+    }
+
     fun guardarItem(hojaId: Long, url: String?, resumen: String, origen: Origen) {
         viewModelScope.launch { repo.guardarItem(hojaId, url, resumen, origen) }
     }
@@ -55,6 +60,10 @@ class NotiksViewModel(app: Application) : AndroidViewModel(app) {
 
     fun editarResumen(item: Item, nuevoResumen: String) {
         viewModelScope.launch { repo.editarResumen(item.id, nuevoResumen) }
+    }
+
+    fun moverItem(item: Item, nuevaHojaId: Long) {
+        viewModelScope.launch { repo.moverItem(item.id, nuevaHojaId) }
     }
 
     suspend fun exportarJson(): String {

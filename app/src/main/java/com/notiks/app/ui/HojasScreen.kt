@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +35,7 @@ fun HojasScreen(
     val conteoPorHoja by viewModel.conteoPorHoja.collectAsState(initial = emptyMap())
     var mostrarDialogo by remember { mutableStateOf(false) }
     var hojaAEliminar by remember { mutableStateOf<Hoja?>(null) }
+    var hojaARenombrar by remember { mutableStateOf<Hoja?>(null) }
 
     Scaffold(
         topBar = {
@@ -67,7 +69,8 @@ fun HojasScreen(
                         hoja = hoja,
                         conteoFichas = conteoPorHoja[hoja.id] ?: 0,
                         onClick = { onAbrirHoja(hoja.id, hoja.titulo) },
-                        onEliminarClick = { hojaAEliminar = hoja }
+                        onEliminarClick = { hojaAEliminar = hoja },
+                        onRenombrarClick = { hojaARenombrar = hoja }
                     )
                 }
             }
@@ -101,10 +104,58 @@ fun HojasScreen(
             }
         )
     }
+
+    hojaARenombrar?.let { hoja ->
+        RenombrarHojaDialog(
+            tituloActual = hoja.titulo,
+            onDismiss = { hojaARenombrar = null },
+            onGuardar = { nuevoTitulo ->
+                viewModel.renombrarHoja(hoja, nuevoTitulo)
+                hojaARenombrar = null
+            }
+        )
+    }
 }
 
 @Composable
-private fun HojaRow(hoja: Hoja, conteoFichas: Int, onClick: () -> Unit, onEliminarClick: () -> Unit) {
+private fun RenombrarHojaDialog(
+    tituloActual: String,
+    onDismiss: () -> Unit,
+    onGuardar: (String) -> Unit
+) {
+    var titulo by remember { mutableStateOf(tituloActual) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Edit, contentDescription = null) },
+        title = { Text("Renombrar hoja") },
+        text = {
+            OutlinedTextField(
+                value = titulo,
+                onValueChange = { titulo = it },
+                label = { Text("Título de la hoja") },
+                singleLine = true
+            )
+        },
+        confirmButton = {
+            TextButton(
+                enabled = titulo.isNotBlank(),
+                onClick = { onGuardar(titulo.trim()) }
+            ) { Text("Guardar") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
+}
+
+@Composable
+private fun HojaRow(
+    hoja: Hoja,
+    conteoFichas: Int,
+    onClick: () -> Unit,
+    onEliminarClick: () -> Unit,
+    onRenombrarClick: () -> Unit
+) {
     val formato = remember { SimpleDateFormat("d MMM, HH:mm", Locale("es")) }
     Row(
         modifier = Modifier
@@ -123,6 +174,13 @@ private fun HojaRow(hoja: Hoja, conteoFichas: Int, onClick: () -> Unit, onElimin
                 "${if (conteoFichas == 1) "1 ficha" else "$conteoFichas fichas"} · Última actividad: ${formato.format(Date(hoja.fechaUltimaActividad))}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(onClick = onRenombrarClick) {
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = "Renombrar hoja",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         IconButton(onClick = onEliminarClick) {

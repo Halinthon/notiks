@@ -37,6 +37,16 @@ interface HojaDao {
 
     @Query("SELECT * FROM hojas WHERE id = :id")
     suspend fun obtenerPorId(id: Long): Hoja?
+
+    @Query("UPDATE hojas SET titulo = :titulo WHERE id = :hojaId")
+    suspend fun actualizarTitulo(hojaId: Long, titulo: String)
+
+    @Query("""
+        SELECT h.id AS id, h.titulo AS titulo, c.nombre AS nombreCuaderno
+        FROM hojas h INNER JOIN cuadernos c ON h.cuadernoId = c.id
+        ORDER BY h.fechaUltimaActividad DESC
+    """)
+    fun observarTodasConCuaderno(): Flow<List<HojaConCuaderno>>
 }
 
 @Dao
@@ -58,6 +68,9 @@ interface ItemDao {
 
     @Query("UPDATE items SET resumen = :resumen WHERE id = :itemId")
     suspend fun actualizarResumen(itemId: Long, resumen: String)
+
+    @Query("UPDATE items SET hojaId = :nuevaHojaId WHERE id = :itemId")
+    suspend fun moverAHoja(itemId: Long, nuevaHojaId: Long)
 
     @Query("SELECT COUNT(*) FROM items")
     fun observarConteoTotal(): Flow<Int>

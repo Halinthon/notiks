@@ -33,6 +33,13 @@ data class Hoja(
 
 enum class Origen { YOUTUBE, X, INSTAGRAM, DISCOVER, WEB, TEXTO }
 
+/** Resultado combinado de una Hoja con el nombre de su Cuaderno, usado para elegir destino al mover una ficha. */
+data class HojaConCuaderno(
+    val id: Long,
+    val titulo: String,
+    val nombreCuaderno: String
+)
+
 /** Un ítem guardado dentro de una Hoja: un enlace o una nota de texto. */
 @Entity(
     tableName = "items",
