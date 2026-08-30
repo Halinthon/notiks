@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.UnfoldLess
+import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -186,6 +188,21 @@ fun HojaDetailScreen(
                     }
                 },
                 actions = {
+                    if (grupos.isNotEmpty()) {
+                        val todosColapsados = grupos.all { it.etiqueta in gruposColapsados }
+                        IconButton(onClick = {
+                            gruposColapsados = if (todosColapsados) {
+                                emptySet()
+                            } else {
+                                grupos.map { it.etiqueta }.toSet()
+                            }
+                        }) {
+                            Icon(
+                                if (todosColapsados) Icons.Default.UnfoldMore else Icons.Default.UnfoldLess,
+                                contentDescription = if (todosColapsados) "Expandir todos los grupos" else "Colapsar todos los grupos"
+                            )
+                        }
+                    }
                     if (esOrdenPorFecha(orden)) {
                         Box {
                             IconButton(onClick = { mostrarMenuGranularidad = true }) {
