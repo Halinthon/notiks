@@ -169,14 +169,24 @@ fun HojaDetailScreen(
     var itemAEliminar by remember { mutableStateOf<Item?>(null) }
     var itemAEditar by remember { mutableStateOf<Item?>(null) }
     var itemAMover by remember { mutableStateOf<Item?>(null) }
-    var orden by remember { mutableStateOf(OrdenItems.FECHA_ANTIGUA) }
-    var granularidad by remember { mutableStateOf(Granularidad.DIA) }
+    var orden by remember { mutableStateOf(OrdenItems.FECHA_RECIENTE) }
+    var granularidad by remember { mutableStateOf(Granularidad.SEMANA) }
     var mostrarMenuOrden by remember { mutableStateOf(false) }
     var mostrarMenuGranularidad by remember { mutableStateOf(false) }
     var gruposColapsados by remember { mutableStateOf(setOf<String>()) }
+    var colapsoInicialAplicado by remember { mutableStateOf(false) }
     val itemsOrdenados = remember(items, orden) { ordenar(items, orden) }
     val grupos = remember(itemsOrdenados, orden, granularidad) { agrupar(itemsOrdenados, orden, granularidad) }
     val hojasConCuaderno by viewModel.hojasConCuaderno.collectAsState(initial = emptyList())
+
+    // Al abrir la hoja por primera vez, los grupos (por semana, por defecto)
+    // arrancan contraídos; después de esto el usuario controla cada grupo.
+    LaunchedEffect(grupos.isNotEmpty()) {
+        if (!colapsoInicialAplicado && grupos.isNotEmpty()) {
+            gruposColapsados = grupos.map { it.etiqueta }.toSet()
+            colapsoInicialAplicado = true
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -222,7 +232,7 @@ fun HojaDetailScreen(
                                         },
                                         onClick = {
                                             granularidad = opcion
-                                            gruposColapsados = emptySet()
+                                            gruposColapsados = agrupar(itemsOrdenados, orden, opcion).map { it.etiqueta }.toSet()
                                             mostrarMenuGranularidad = false
                                         }
                                     )
@@ -248,6 +258,7 @@ fun HojaDetailScreen(
                                     },
                                     onClick = {
                                         orden = opcion
+                                        gruposColapsados = agrupar(itemsOrdenados, opcion, granularidad).map { it.etiqueta }.toSet()
                                         mostrarMenuOrden = false
                                     }
                                 )

@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -91,6 +93,7 @@ private fun ShareSheet(
     var cargandoResumen by remember { mutableStateOf(false) }
     var mostrarNuevaHoja by remember { mutableStateOf(false) }
     var cuadernoSeleccionado by remember { mutableStateOf<Long?>(null) }
+    var calificacion by remember { mutableStateOf(0) }
 
     // La app de origen a veces solo comparte el link, sin título ni texto.
     // En ese caso, entramos a la página y traemos el título/descripción real
@@ -145,7 +148,27 @@ private fun ShareSheet(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
+            Text("Calificación (opcional)", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                for (posicion in 1..5) {
+                    IconButton(
+                        onClick = { calificacion = if (posicion == calificacion) 0 else posicion },
+                        modifier = Modifier.size(34.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (posicion <= calificacion) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = "Calificar con $posicion estrella" + if (posicion != 1) "s" else "",
+                            tint = if (posicion <= calificacion) com.notiks.app.ui.theme.NotiksAmarillo
+                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
             Text("Elige una hoja", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
 
@@ -155,7 +178,7 @@ private fun ShareSheet(
             ) {
                 items(hojasRecientes, key = { it.id }) { hoja ->
                     HojaOpcion(hoja = hoja) {
-                        viewModel.guardarItem(hoja.id, url, resumen, origen)
+                        viewModel.guardarItem(hoja.id, url, resumen, origen, calificacion)
                         onGuardado()
                     }
                 }
@@ -177,7 +200,7 @@ private fun ShareSheet(
             onDismiss = { mostrarNuevaHoja = false },
             onConfirmar = { cuadernoId, titulo ->
                 viewModel.crearHoja(cuadernoId, titulo) { nuevaHojaId ->
-                    viewModel.guardarItem(nuevaHojaId, url, resumen, origen)
+                    viewModel.guardarItem(nuevaHojaId, url, resumen, origen, calificacion)
                 }
                 mostrarNuevaHoja = false
                 onGuardado()

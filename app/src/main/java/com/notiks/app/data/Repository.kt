@@ -26,8 +26,8 @@ class Repository(context: Context) {
     fun observarHojasConCuaderno() = hojaDao.observarTodasConCuaderno()
 
     fun observarItems(hojaId: Long) = itemDao.observarPorHoja(hojaId)
-    suspend fun guardarItem(hojaId: Long, url: String?, resumen: String, origen: Origen) {
-        itemDao.insertar(Item(hojaId = hojaId, url = url, resumen = resumen, origen = origen))
+    suspend fun guardarItem(hojaId: Long, url: String?, resumen: String, origen: Origen, calificacion: Int = 0) {
+        itemDao.insertar(Item(hojaId = hojaId, url = url, resumen = resumen, origen = origen, calificacion = calificacion.coerceIn(0, 5)))
         obtenerHoja(hojaId)?.let { tocarHoja(it) }
     }
     suspend fun eliminarItem(i: Item) = itemDao.eliminar(i)

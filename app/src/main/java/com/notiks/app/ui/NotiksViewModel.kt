@@ -45,8 +45,8 @@ class NotiksViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { repo.renombrarHoja(hoja.id, nuevoTitulo) }
     }
 
-    fun guardarItem(hojaId: Long, url: String?, resumen: String, origen: Origen) {
-        viewModelScope.launch { repo.guardarItem(hojaId, url, resumen, origen) }
+    fun guardarItem(hojaId: Long, url: String?, resumen: String, origen: Origen, calificacion: Int = 0) {
+        viewModelScope.launch { repo.guardarItem(hojaId, url, resumen, origen, calificacion) }
     }
 
     fun eliminarItem(item: Item) {
